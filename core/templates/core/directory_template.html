@@ -1,0 +1,13 @@
+<li>
+    {{ directory.name }}
+    <ul>
+        {% for subdirectory in directory.directory_set.all %}
+            {% include 'core/subdirectory_template.html' %}
+        {% endfor %}
+        {% for file in directory.file_set.all %}
+            {% if file.is_available %}
+                <li><a href="{% url 'file_content' file.id %}" data-id="{{ file.id }}" class="file-link">{{ file.name }}</a></li>
+            {% endif %}
+        {% endfor %}
+    </ul>
+</li>

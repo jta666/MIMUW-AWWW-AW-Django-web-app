@@ -1,0 +1,361 @@
+<!doctype html>
+<!-- html5 nie jest akceptowane przez validator.w3.org -->
+
+<html lang="pl">
+
+{% load static %}
+
+<head>
+    <title>
+        Makieta
+    </title>
+    <link rel="stylesheet" href="{% static 'core/makieta.css' %}">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="{% static 'core/codemirror.js' %}"></script>
+    <link rel="stylesheet" type ="text/css" href="{% static 'core/codemirror.css' %}">
+    <script src="{% static 'util/mode/javascript/javascript.js' %}" ></script>
+    <script src="{% static 'util/mode/clike/clike.js' %}" ></script>
+</head>
+
+<body class="dark-color-scheme">
+    <div class="header">
+        <div class="dropdown1">
+            <button class="menu-button">plik</button>
+            <div class="xd">
+                <!-- <a href="{% url 'compile_and_update' 2 %}">kompiluj</a> -->
+                <button id="kompiluj-button">kompiluj</button>
+                <a href="{% url 'add_file' %}">dodaj plik</a>
+                <a href="{% url 'add_directory' %}">dodaj katalog</a>
+                <!-- For File -->
+                <a class="dropdown-item" href="{% url 'delete_file' %}">Usuń plik</a>
+                <!-- For Directory -->
+                <a class="dropdown-item" href="{% url 'delete_directory' %}">Usuń katalog</a>
+                <a class="dropdown-item" href="{% url 'login' %}">Zaloguj</a>
+                <a class="dropdown-item" href="{% url 'signup' %}">Zarejestruj</a>
+            </div>
+        </div> 
+        <button class="menu-button">edycja</button>
+        <button class="menu-button">opcje</button>
+    </div>
+    
+    <div class="meat">
+        <div class='leftside'>
+            <h2>Katalogi i pliki</h2>
+            {% for directory in root_directories %}
+                {% if directory.is_available %}
+                    {% include 'core/directory_template.html' %}
+                {% endif %}        
+            {% endfor %}
+        </div>
+        <div class="rightside">
+            <div class="rightside-top">
+                <div class="program">
+                    <div class="program">
+                        <!-- <pre class="all-code">
+                            {{ file_content }}
+                        </pre> -->
+                        <textarea id="code-editor">
+                            {{ file_content }}
+                        </textarea>
+                        <!-- <button onclick='saveCode("{{  csrf_token  }}")' class="stretch-button">Save Code</button> -->
+                        <button id="save-button" class="stretch-button">Save Code</button>
+                        <!-- <div id="sections">
+                            {% for section in file_sections %}
+                                <pre id="section-{{ section.id }}" class="section" data-section-type="{{ section.section_type.type }}" data-section-status="{{ section.section_status.status }}" data-status-data="{{ section.status_data.data }}">
+                                    {{ section.content }}
+                                </pre>
+                            {% endfor %}
+                            </div> -->
+                            
+                    </div>
+                </div>
+                <div class="code">
+                    <pre class="all-code">
+                        {{ compiled_content }}
+                    </pre>
+                </div>
+            </div>
+            <div class="tabs-wrapper">
+
+                <input type="radio" name="tabs" id="tab1" checked >
+                <label for="tab1">standard</label>
+
+                <input type="radio" name="tabs" id="tab2" >
+                <label for="tab2">procesor</label>
+
+                <input type="radio" name="tabs" id="tab3" >
+                <label for="tab3">optymalizacja</label>
+
+                <input type="radio" name="tabs" id="tab4" >
+                <label for="tab4">opcje procesora</label>
+
+                <div class="tab content1">
+                    <!-- Dostępne:
+                    <ul>
+                        <li>C89</li>
+                        <li>C99</li>
+                        <li>C11</li>
+                    </ul> -->
+
+                    <!-- <form id="post-form" method="POST">
+                        <p>C89</p><input type="radio" name="C89" id="C89"/><br>
+                        <p>C99</p><input type="radio" name="C99" id="C99"/><br>
+                        <p>C11</p><input type="radio" name="C11" id="C11"/><br>
+                        <input type="submit" />
+                    </form> -->
+
+                    <button class="standard-button {% if compilation_options.standard == 'C89' %}selected{% endif %}" value="C89">C89</button><br>
+<button class="standard-button {% if compilation_options.standard == 'C99' %}selected{% endif %}" value="C99">C99</button><br>
+<button class="standard-button {% if compilation_options.standard == 'C11' %}selected{% endif %}" value="C11">C11</button><br>
+
+<div id="floating-box"></div>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script>
+    var compileUrlTemplate = "{% url 'compile_and_update' 99999999 %}";
+
+
+    $(document).ready(function() {
+        // Targeting button with id "save-button"
+        $('#save-button').click(function(){
+            saveCode();
+        });
+        // var myCodeMirror = CodeMirror.fromTextArea(document.getElementById('code-editor'), {
+        // lineNumbers: true,
+        // theme: "default"
+        // });
+
+        // const codeArea = document.getElementById("code-editor");
+        // if (codeArea)
+        // {
+        //     console.log(codeArea)
+
+        //     editorCodeMirror = CodeMirror.fromTextArea(codeArea, {
+        //         value: "int myScript()\n{\n\treturn 100;\n}\n",
+        //         mode:  "text/x-csrc",
+        //         lineNumbers: true,
+        //     });
+        // }
+
+        // Create a variable to hold the id of the currently selected file
+        var selectedFileId = null;
+
+        $('#kompiluj-button').click(function() {
+            console.log(selectedFileId);
+            $.ajax({
+                url: compileUrlTemplate.replace('99999999', selectedFileId),
+                type: 'GET',
+                success: function(data) {
+                    // Update the 'code' div with the compiled content
+                    $('.code .all-code').html(data.compiled_content);
+                }
+            });
+        });
+
+        function saveCode(csrf_token){
+            var fileContent = editor.getValue();
+            var fileId = selectedFileId;
+            console.log("saveCode File ID:", fileId);
+            console.log("saveCode File Content:", fileContent);
+            $.ajax({
+                type: "POST",
+                url: "/update_file_content/",
+                data: {
+                    csrfmiddlewaretoken: csrf_token,
+                    file_content: fileContent,
+                    file_id: fileId
+                },
+                success: function(data) {
+                    alert("File content has been saved.");
+                },
+                error: function() {
+                    alert("An error occurred. Please try again.");
+                }
+            });
+        }
+
+        // $('.xd a').click(function(event) {
+
+        //     if (selectedFileId === undefined) {
+        //         alert('Please select a file first.');
+        //         return;
+        //     }
+        //     // Only do something if a file is selected
+        //     if (selectedFileId !== null) {
+        //         // Prevent the default link behavior (page reload)
+        //         event.preventDefault();
+
+        //         // Send an Ajax request to the server to compile the selected file
+        //         $.ajax({
+        //             url: compileUrlTemplate.replace('99999999', selectedFileId),
+        //             type: 'GET',
+        //             success: function(data) {
+        //                 // Update the 'program' div with the file content
+        //                 $('.program .all-code').html(data.file_content);
+        //                 // Update the 'code' div with the compiled content
+        //                 $('.code .all-code').html(data.compiled_content);
+        //             }
+        //         });
+        //     }
+        // });
+
+        var editor;
+
+        // Handle clicks on file links
+        $('.file-link').click(function(event) {
+            // Prevent the default link behavior (page reload)
+            event.preventDefault();
+
+            
+            // Update selectedFileId with the file id from the link's href attribute
+            selectedFileId = $(this).data('id');
+            console.log(selectedFileId);
+
+            // Send an Ajax request to the server to fetch the new file content
+            $.ajax({
+                url: $(this).attr('href'),
+                type: 'GET',
+                success: function(data) {
+                    if (editor) {
+                        editor.toTextArea();
+                    }
+                    // // Update the 'program' div with the file content
+                    // $('.program .all-code').html(data.file_content);
+                    // Set the value of the textarea to the file content
+                    $('#code-editor').val(data.file_content);
+                    // Initialize the CodeMirror editor
+                    editor = CodeMirror.fromTextArea(document.getElementById('code-editor'), {
+                        lineNumbers: true,
+                        mode: "text/x-csrc"  // C/C++ mode
+                    });
+                    // Update the 'code' div with the compiled content
+                    $('.code .all-code').html(data.compiled_content);
+                }
+            });
+        });
+
+        $('.standard-button').click(function() {
+            let standard = $(this).val();
+
+            // Remove 'selected' class from all buttons
+            $('.standard-button').removeClass('selected');
+                        // Add 'selected' class to the clicked button
+                        $(this).addClass('selected');
+            $.ajax({
+                url: "{% url 'update_standard' %}",
+                type: "POST",
+                data: {
+                    'standard': standard,
+                    'csrfmiddlewaretoken': "{{ csrf_token }}"
+                },
+                dataType: 'json',
+                success: function (data) {
+                    if (data.success) {
+                        //alert('Compilation standard updated successfully');
+                    }
+                }
+            });
+        });
+
+        $('.processor-button').click(function() {
+            let processor = $(this).val();
+
+            // Remove 'selected' class from all buttons
+            $('.processor-button').removeClass('selected');
+
+            // Add 'selected' class to the clicked button
+            $(this).addClass('selected');
+
+            $.ajax({
+                url: "{% url 'update_processor' %}",
+                type: "POST",
+                data: {
+                    'processor': processor,
+                    'csrfmiddlewaretoken': "{{ csrf_token }}"
+                },
+                dataType: 'json',
+                success: function (data) {
+                    if (data.success) {
+                        //alert('Processor updated successfully');
+                    }
+                }
+            });
+        });
+
+        $('.optimization-button').click(function() {
+            let optimization = $(this).val();
+
+            // Remove 'selected' class from all buttons
+            $('.optimization-button').removeClass('selected');
+
+            // Add 'selected' class to the clicked button
+            $(this).addClass('selected');
+
+            $.ajax({
+                url: "{% url 'update_optimization' %}",
+                type: "POST",
+                data: {
+                    'optimization': optimization,
+                    'csrfmiddlewaretoken': "{{ csrf_token }}"
+                },
+                dataType: 'json',
+                success: function (data) {
+                    if (data.success) {
+                        //alert('Optimization updated successfully');
+                    }
+                }
+            });
+        });
+
+
+        var sections = document.getElementsByClassName('section');
+            
+            for (var i = 0; i < sections.length; i++) {
+                $(sections[i]).on('mouseover', function(event) {
+                    var sectionType = event.target.dataset.sectionType;
+                    var sectionStatus = event.target.dataset.sectionStatus;
+                    var statusData = event.target.dataset.statusData;
+
+                    var floatingBox = document.getElementById('floating-box');
+                    floatingBox.innerHTML = 'Type: ' + sectionType + '<br>' +
+                                           'Status: ' + sectionStatus + '<br>' +
+                                           'Data: ' + statusData;
+
+                    floatingBox.style.display = 'block';
+                    floatingBox.style.left = (event.pageX + 10) + 'px';
+                    floatingBox.style.top = (event.pageY + 10) + 'px';
+                });
+
+                $(sections[i]).on('mouseout', function() {
+                    document.getElementById('floating-box').style.display = 'none';
+                });
+            }
+    });
+</script>
+
+
+                    <!-- Obecny (kliknij, by zmienić):
+                    <ul>
+                        <li><a href="{% url 'update_compilation_options' file_id=file_id %}">{{ compilation_options.standard }}</a></li>
+                    </ul> -->
+                </div>
+                <div class="tab content2">
+                    <button class="processor-button {% if compilation_options.processor == 'MCS51' %}selected{% endif %}" value="MCS51">MCS51</button><br>
+                    <button class="processor-button {% if compilation_options.processor == 'Z80' %}selected{% endif %}" value="Z80">Z80</button><br>
+                    <button class="processor-button {% if compilation_options.processor == 'STM8' %}selected{% endif %}" value="STM8">STM8</button><br>
+                </div>
+                <div class="tab content3">
+                    <button class="optimization-button {% if compilation_options.optimization == 'nogcse' %}selected{% endif %}" value="nogcse">nogcse</button><br>
+                    <button class="optimization-button {% if compilation_options.optimization == 'noinvariant' %}selected{% endif %}" value="noinvariant">noinvariant</button><br>
+                    <button class="optimization-button {% if compilation_options.optimization == 'noinduction' %}selected{% endif %}" value="noinduction">noinduction</button><br>
+                </div>
+                <div class="tab content4">
+                    not ready yet
+                </div>
+
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

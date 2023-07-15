@@ -1,0 +1,45 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pl-PL">
+
+<head>
+    <title>Tasks</title>
+    <link rel="stylesheet" href="{% static 'core/main_page/main-menu.css' %}">
+    <meta charset="UTF-8">
+	<title>Strona logowania</title>
+	<style>
+        body {
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+    <noscript>Your browser does not support JavaScript!</noscript>
+    <script type="text/javascript" src="{% static 'core/main_page/main-menu.js' %}"></script>
+
+    <div class="wrapper">
+
+        <div class="cell-list">
+	  <form method="post" class="card" novalidate>
+	  	{% csrf_token %}
+	    <h2 class="text-center">Log in to your account</h2>
+		{% for field in form %}
+	    		{{ field.label_tag }} 
+	        	{{ field }}
+	        	{% if field.errors %}
+	        		<small>{{ field.errors|striptags }}</small> 
+	        	{% endif %}
+		{% endfor %}
+		
+		<input type="submit" value="Login" class="btn btn-primary full-width">
+		<hr>
+		<p class="text-center">Don't have a account? <a href="{% url 'signup' %}">Join Now</a></p>
+	</form>
+</div>
+        </div>
+    </div>
+
+</body>
+
+</html>

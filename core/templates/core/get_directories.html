@@ -1,0 +1,10 @@
+{% extends 'core/home.html' %}
+
+{% block content1 %}
+<h1>Struktura katalogów</h1>
+{% for directory in directories %}
+    <h2>{{ directory.name }}</h2>
+{% endfor %}
+{% endblock %}
+
+<script src="{% static 'core/js/main.js' %}"></script>

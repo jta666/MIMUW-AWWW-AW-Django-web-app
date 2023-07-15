@@ -1,0 +1,36 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pl-PL">
+
+<head>
+    <title>Tasks</title>
+    <link rel="stylesheet" href="{% static 'core/main_page/main-menu.css' %}">
+    <meta charset="UTF-8">
+	<title>Strona rejestracji</title>
+    <style>
+        body {
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+    <noscript>Your browser does not support JavaScript!</noscript>
+    <script type="text/javascript" src="{% static 'core/main_page/main-menu.js' %}"></script>
+
+    <div class="wrapper">
+
+        <div class="cell-list">
+            <h2 class="text-center">Register</h2>
+            <form method="post">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <button type="submit">Register</button>
+                <br><br>
+                <a href="{% url 'home' %}">Home</a>
+            </form>
+</div>
+        </div>
+    </div>
+
+</body>
